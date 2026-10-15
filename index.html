@@ -722,6 +722,8 @@
     const STORAGE_KEY = 'packkeep_state_v1';
     const GIST_CONFIG_KEY = 'packkeep_gist_config';
     const GIST_FILENAME = 'packkeep_db.json';
+    const COLLAPSED_CATEGORIES_KEY = 'packkeep_collapsed_categories_v1';
+    let collapsedCategoryIds = new Set();
 
     let state = {
       currentView: 'TEMPLATE', // 'TEMPLATE' ou trip.id
@@ -747,6 +749,7 @@
      ********************************************************************/
     window.addEventListener('DOMContentLoaded', async () => {
       loadLocalState();
+      loadCollapsedCategories();
       loadGistConfig();
       renderAll();
 
@@ -771,6 +774,30 @@
       } catch (e) {
         console.error('Erro ao ler localStorage:', e);
       }
+    }
+
+    function loadCollapsedCategories() {
+      try {
+        const raw = localStorage.getItem(COLLAPSED_CATEGORIES_KEY);
+        const ids = raw ? JSON.parse(raw) : [];
+        collapsedCategoryIds = new Set(Array.isArray(ids) ? ids : []);
+      } catch (e) {
+        collapsedCategoryIds = new Set();
+      }
+    }
+
+    function toggleCategoryCollapse(catId) {
+      if (collapsedCategoryIds.has(catId)) {
+        collapsedCategoryIds.delete(catId);
+      } else {
+        collapsedCategoryIds.add(catId);
+      }
+
+      try {
+        localStorage.setItem(COLLAPSED_CATEGORIES_KEY, JSON.stringify([...collapsedCategoryIds]));
+      } catch (e) { }
+
+      renderCategories();
     }
 
     function saveState(triggerCloudSync = true) {
@@ -1247,8 +1274,8 @@
       const isTpl = isTemplateView();
 
       tplBtn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer ${isTpl
-          ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
-          : 'border-slate-200 dark:border-borderDark hover:bg-slate-100 dark:hover:bg-slate-800/60'
+        ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+        : 'border-slate-200 dark:border-borderDark hover:bg-slate-100 dark:hover:bg-slate-800/60'
         }`;
 
       const tplTotalItems = state.masterTemplate.reduce((acc, c) => acc + c.items.length, 0);
@@ -1427,6 +1454,7 @@
         const totalCat = cat.items.length;
         const packedCat = cat.items.filter(i => i.packed).length;
         const pctCat = totalCat === 0 ? 0 : Math.round((packedCat / totalCat) * 100);
+        const isCollapsed = collapsedCategoryIds.has(cat.id);
 
         return `
           <div class="bg-white dark:bg-cardDark rounded-2xl border ${state.pruneMode ? 'prune-shake border-rose-500/50' : 'border-slate-200 dark:border-borderDark'} shadow-xs flex flex-col overflow-hidden transition">
@@ -1437,8 +1465,15 @@
                 <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
                   <i class="fa-solid ${cat.icon || 'fa-suitcase'} text-xs"></i>
                 </div>
-                <div class="truncate">
-                  <h3 class="font-bold text-sm truncate">${escapeHtml(cat.name)}</h3>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <h3 class="font-bold text-sm truncate min-w-0">${escapeHtml(cat.name)}</h3>
+                  <button type="button" onclick="toggleCategoryCollapse('${cat.id}')"
+                    class="shrink-0 p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition"
+                    title="${isCollapsed ? 'Expandir' : 'Recolher'} categoria ${escapeHtml(cat.name)}"
+                    aria-label="${isCollapsed ? 'Expandir' : 'Recolher'} categoria ${escapeHtml(cat.name)}"
+                    aria-expanded="${!isCollapsed}">
+                    <i class="fa-solid ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down'} text-xs"></i>
+                  </button>
                 </div>
               </div>
 
@@ -1466,12 +1501,12 @@
             </div>
 
             <!-- Category Mini Progress -->
-            <div class="w-full h-1 bg-slate-100 dark:bg-slate-800">
+            <div class="${isCollapsed ? 'hidden' : ''} w-full h-1 bg-slate-100 dark:bg-slate-800">
               <div class="h-full transition-all duration-300 ${pctCat === 100 ? 'bg-emerald-500' : 'bg-blue-500'}" style="width: ${pctCat}%"></div>
             </div>
 
             <!-- Items List -->
-            <ul class="divide-y divide-slate-100 dark:divide-borderDark/60 flex-1">
+            <ul class="${isCollapsed ? 'hidden' : ''} divide-y divide-slate-100 dark:divide-borderDark/60 flex-1">
               ${filteredItems.map(item => `
                 <li 
                   onclick="handleItemClick('${cat.id}', '${item.id}')"
@@ -1527,7 +1562,7 @@
             </ul>
 
             <!-- Quick Add Footer -->
-            <form onsubmit="quickAddItem('${cat.id}', event)" class="p-2.5 border-t border-slate-100 dark:border-borderDark bg-slate-50/30 dark:bg-slate-900/20 flex items-center gap-1.5">
+            <form onsubmit="quickAddItem('${cat.id}', event)" class="${isCollapsed ? 'hidden' : ''} p-2.5 border-t border-slate-100 dark:border-borderDark bg-slate-50/30 dark:bg-slate-900/20 flex items-center gap-1.5">
               <input 
                 id="input-add-${cat.id}"
                 type="text" 
