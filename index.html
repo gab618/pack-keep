@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>PackKeep — Checklist & Histórico de Viagens</title>
 
   <!-- Configurações de PWA para iOS -->
@@ -107,89 +109,117 @@
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       -webkit-tap-highlight-color: transparent;
       padding-bottom: env(safe-area-inset-bottom);
       overscroll-behavior-y: none;
     }
+
     /* Ajustes de Safe Area para o Notch / Dynamic Island no iPhone */
     header {
       padding-top: env(safe-area-inset-top);
     }
+
     #sidebar {
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
+
     @media (min-width: 1024px) {
       #sidebar {
         padding-top: 0;
       }
     }
+
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
+
     .custom-scrollbar::-webkit-scrollbar-track {
       background: transparent;
     }
+
     .custom-scrollbar::-webkit-scrollbar-thumb {
       background: rgba(156, 163, 175, 0.25);
       border-radius: 9999px;
     }
+
     .prune-shake {
       animation: subtlePulse 1.8s infinite ease-in-out;
     }
+
     @keyframes subtlePulse {
-      0%, 100% { border-color: rgba(244, 63, 94, 0.35); }
-      50% { border-color: rgba(244, 63, 94, 0.85); }
+
+      0%,
+      100% {
+        border-color: rgba(244, 63, 94, 0.35);
+      }
+
+      50% {
+        border-color: rgba(244, 63, 94, 0.85);
+      }
     }
   </style>
 </head>
-<body class="bg-slate-100 dark:bg-bgDark text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+<body
+  class="bg-slate-100 dark:bg-bgDark text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
 
   <!-- TOP NAVBAR -->
-  <header class="sticky top-0 z-30 bg-white/90 dark:bg-cardDark/90 backdrop-blur-md border-b border-slate-200 dark:border-borderDark">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-      
+  <header
+    class="sticky top-0 z-30 bg-white/90 dark:bg-cardDark/90 backdrop-blur-md border-b border-slate-200 dark:border-borderDark">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2 sm:gap-3">
+
       <!-- Left: Brand & Mobile Drawer Toggle -->
-      <div class="flex items-center gap-3">
-        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button onclick="toggleSidebar()"
+          class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
           <i class="fa-solid fa-bars text-lg"></i>
         </button>
-        <div class="flex items-center gap-2.5">
-          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+        <div class="flex items-center gap-2 sm:gap-2.5">
+          <div
+            class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
             <i class="fa-solid fa-suitcase-rolling"></i>
           </div>
           <div>
             <div class="flex items-center gap-2">
               <span class="font-bold tracking-tight text-base">PackKeep</span>
-              <span id="viewBadge" class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
+              <span id="viewBadge"
+                class="hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
                 Template
               </span>
             </div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Duplique, pode os grupos, faça a mala e dê uncheck na volta</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Duplique, pode os grupos, faça a mala
+              e dê uncheck na volta</p>
           </div>
         </div>
       </div>
 
       <!-- Right: Quick Actions & Gist Sync -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1 sm:gap-2">
         <!-- Gist Status Pill -->
-        <button onclick="openGistModal()" id="gistStatusBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-borderDark bg-slate-50 dark:bg-slate-800/70 hover:border-blue-500/50 transition">
+        <button onclick="openGistModal()" id="gistStatusBtn" title="Configurar sincronização via Gist"
+          aria-label="Configurar sincronização via Gist"
+          class="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-borderDark bg-slate-50 dark:bg-slate-800/70 hover:border-blue-500/50 transition">
           <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
           <i class="fa-brands fa-github text-sm"></i>
           <span id="syncText" class="hidden sm:inline">Gist Local</span>
         </button>
 
         <!-- New Trip CTA -->
-        <button onclick="openNewTripModal('TEMPLATE')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-600/25 transition">
+        <button onclick="openNewTripModal('TEMPLATE')" title="Nova Viagem" aria-label="Nova Viagem"
+          class="flex items-center gap-2 px-2 py-2 sm:px-3.5 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-600/25 transition">
           <i class="fa-solid fa-plus"></i>
-          <span>Nova Viagem</span>
+          <span class="hidden sm:inline">Nova Viagem</span>
         </button>
 
         <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Alternar Tema">
+        <button onclick="toggleTheme()"
+          class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          title="Alternar Tema">
           <i id="themeIcon" class="fa-solid fa-sun"></i>
         </button>
       </div>
@@ -201,9 +231,10 @@
 
     <!-- SIDEBAR (Desktop Sticky + Mobile Drawer) -->
     <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
-    
-    <aside id="sidebar" class="fixed lg:sticky top-0 lg:top-16 left-0 z-50 lg:z-10 w-72 h-full lg:h-[calc(100vh-4rem)] bg-white dark:bg-cardDark border-r border-slate-200 dark:border-borderDark flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
-      
+
+    <aside id="sidebar"
+      class="fixed lg:sticky top-0 lg:top-16 left-0 z-50 lg:z-10 w-72 h-full lg:h-[calc(100vh-4rem)] bg-white dark:bg-cardDark border-r border-slate-200 dark:border-borderDark flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
+
       <div class="p-4 border-b border-slate-200 dark:border-borderDark flex items-center justify-between lg:hidden">
         <span class="font-bold text-sm">Navegação & Histórico</span>
         <button onclick="toggleSidebar()" class="p-1.5 text-slate-400 hover:text-white">
@@ -212,13 +243,14 @@
       </div>
 
       <div class="p-3 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
-        
+
         <!-- Master Template Card -->
         <div>
           <div class="px-2 mb-2 flex items-center justify-between">
             <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Matriz Principal</span>
           </div>
-          <div id="navTemplateBtn" onclick="selectView('TEMPLATE')" class="w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer">
+          <div id="navTemplateBtn" onclick="selectView('TEMPLATE')"
+            class="w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-thumbtack text-sm"></i>
@@ -228,7 +260,9 @@
                 <div id="templateCountSub" class="text-xs text-slate-400">Template Mestre</div>
               </div>
             </div>
-            <button onclick="event.stopPropagation(); openNewTripModal('TEMPLATE')" title="Criar viagem a partir do Template" class="opacity-70 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition">
+            <button onclick="event.stopPropagation(); openNewTripModal('TEMPLATE')"
+              title="Criar viagem a partir do Template"
+              class="opacity-70 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition">
               <i class="fa-regular fa-copy text-xs"></i>
             </button>
           </div>
@@ -238,7 +272,8 @@
         <div>
           <div class="px-2 mb-2 flex items-center justify-between">
             <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Minhas Viagens</span>
-            <span id="tripsTotalBadge" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">0</span>
+            <span id="tripsTotalBadge"
+              class="text-[11px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">0</span>
           </div>
           <div id="tripsListContainer" class="space-y-1.5">
             <!-- Populated by JS -->
@@ -250,10 +285,12 @@
       <!-- Sidebar Footer: Backup / Restore Template -->
       <div class="p-3 border-t border-slate-200 dark:border-borderDark bg-slate-50/50 dark:bg-slate-900/40 space-y-2">
         <div class="flex gap-2">
-          <button onclick="exportDataJson()" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-borderDark hover:border-blue-500/40 flex items-center justify-center gap-1.5 transition">
+          <button onclick="exportDataJson()"
+            class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-borderDark hover:border-blue-500/40 flex items-center justify-center gap-1.5 transition">
             <i class="fa-solid fa-download text-slate-400"></i> Exportar
           </button>
-          <label class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-borderDark hover:border-blue-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition">
+          <label
+            class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-borderDark hover:border-blue-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition">
             <i class="fa-solid fa-upload text-slate-400"></i> Importar
             <input type="file" accept=".json" onchange="importDataJson(event)" class="hidden" />
           </label>
@@ -265,13 +302,15 @@
     <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
 
       <!-- HEADER CARD & PROGRESS BAR -->
-      <section class="bg-white dark:bg-cardDark rounded-2xl p-5 border border-slate-200 dark:border-borderDark shadow-sm space-y-4">
-        
+      <section
+        class="bg-white dark:bg-cardDark rounded-2xl p-5 border border-slate-200 dark:border-borderDark shadow-sm space-y-4">
+
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="space-y-1">
             <div class="flex items-center gap-2.5 flex-wrap">
               <h1 id="currentTitle" class="text-xl sm:text-2xl font-bold tracking-tight">viagem base</h1>
-              <span id="tripDaysPill" class="hidden text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30"></span>
+              <span id="tripDaysPill"
+                class="hidden text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30"></span>
             </div>
             <p id="currentSubtitle" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               Edite sua lista matriz. Tudo o que estiver aqui servirá de base quando você criar uma viagem nova.
@@ -294,19 +333,24 @@
             <span id="progressPercentage" class="font-bold text-blue-500 text-base">0%</span>
           </div>
           <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
-            <div id="progressBarFill" class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+            <div id="progressBarFill"
+              class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all duration-300"
+              style="width: 0%"></div>
           </div>
         </div>
 
         <!-- PRUNE MODE BANNER -->
-        <div id="pruneBanner" class="hidden rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div id="pruneBanner"
+          class="hidden rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2.5 text-rose-400 text-xs sm:text-sm">
             <i class="fa-solid fa-scissors text-base"></i>
             <div>
-              <span class="font-semibold">Modo Poda Ativo:</span> Clique em qualquer item para tirá-lo desta viagem, ou clique em <strong>"Remover Grupo"</strong> no topo de uma caixa para sumir com a categoria inteira.
+              <span class="font-semibold">Modo Poda Ativo:</span> Clique em qualquer item para tirá-lo desta viagem, ou
+              clique em <strong>"Remover Grupo"</strong> no topo de uma caixa para sumir com a categoria inteira.
             </div>
           </div>
-          <button onclick="togglePruneMode(false)" class="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-semibold hover:bg-rose-600 shrink-0">
+          <button onclick="togglePruneMode(false)"
+            class="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-semibold hover:bg-rose-600 shrink-0">
             Concluir Poda
           </button>
         </div>
@@ -315,16 +359,20 @@
 
       <!-- FILTERS, SEARCH & QUICK ADD -->
       <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        
+
         <!-- Filter Tabs -->
-        <div id="filterTabs" class="flex items-center bg-white dark:bg-cardDark p-1 rounded-xl border border-slate-200 dark:border-borderDark self-start">
-          <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+        <div id="filterTabs"
+          class="flex items-center bg-white dark:bg-cardDark p-1 rounded-xl border border-slate-200 dark:border-borderDark self-start">
+          <button onclick="setFilter('all')" id="filter-all"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
             Todos
           </button>
-          <button onclick="setFilter('unpacked')" id="filter-unpacked" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+          <button onclick="setFilter('unpacked')" id="filter-unpacked"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
             Faltam
           </button>
-          <button onclick="setFilter('packed')" id="filter-packed" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+          <button onclick="setFilter('packed')" id="filter-packed"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
             Na Mala
           </button>
         </div>
@@ -333,18 +381,17 @@
         <div class="flex items-center gap-2 flex-1 sm:max-w-md">
           <div class="relative flex-1">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-            <input 
-              id="searchInput"
-              type="text" 
-              oninput="handleSearch(this.value)"
-              placeholder="Filtrar item (ex: carregador, violeta, cabo)..." 
-              class="w-full pl-8 pr-8 py-2 rounded-xl bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark text-xs sm:text-sm focus:outline-none focus:border-blue-500"
-            />
-            <button id="clearSearchBtn" onclick="handleSearch('')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+            <input id="searchInput" type="text" oninput="handleSearch(this.value)"
+              placeholder="Filtrar item (ex: carregador, violeta, cabo)..."
+              class="w-full pl-8 pr-8 py-2 rounded-xl bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark text-xs sm:text-sm focus:outline-none focus:border-blue-500" />
+            <button id="clearSearchBtn" onclick="handleSearch('')"
+              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
               <i class="fa-solid fa-circle-xmark text-xs"></i>
             </button>
           </div>
-          <button onclick="addNewCategoryPrompt()" class="px-3 py-2 rounded-xl bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark hover:border-blue-500/50 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition" title="Nova Categoria">
+          <button onclick="addNewCategoryPrompt()"
+            class="px-3 py-2 rounded-xl bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark hover:border-blue-500/50 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition"
+            title="Nova Categoria">
             <i class="fa-solid fa-folder-plus text-blue-500"></i>
             <span class="hidden md:inline">Categoria</span>
           </button>
@@ -362,7 +409,8 @@
 
   <!-- MODAL: NOVA VIAGEM (Duplicar do Template ou de outra Viagem) -->
   <div id="newTripModal" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+    <div
+      class="bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center">
@@ -381,16 +429,20 @@
       <div class="space-y-3.5 overflow-y-auto pr-1 custom-scrollbar">
         <!-- Origem da Cópia -->
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Copiar itens de (Origem)</label>
-          <select id="newTripSourceSelect" onchange="onNewTripSourceChange()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm focus:outline-none focus:border-blue-500">
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Copiar itens de
+            (Origem)</label>
+          <select id="newTripSourceSelect" onchange="onNewTripSourceChange()"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm focus:outline-none focus:border-blue-500">
             <!-- Populated by JS -->
           </select>
         </div>
 
         <!-- Nome da Viagem -->
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nome da Viagem</label>
-          <input id="newTripNameInput" type="text" placeholder="Ex: Brasília - Outubro, Fds Praia..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm focus:outline-none focus:border-blue-500" />
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nome da
+            Viagem</label>
+          <input id="newTripNameInput" type="text" placeholder="Ex: Brasília - Outubro, Fds Praia..."
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm focus:outline-none focus:border-blue-500" />
         </div>
 
         <!-- Dias de Viagem -->
@@ -399,8 +451,11 @@
             Quantidade de Dias <span class="text-blue-400 font-normal">(calcula "cuecas = dias + 1")</span>
           </label>
           <div class="flex items-center gap-2">
-            <input id="newTripDaysInput" type="number" min="1" max="90" value="4" oninput="updateUnderwearPreview(this.value)" class="w-28 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm font-semibold focus:outline-none focus:border-blue-500" />
-            <span id="underwearCalcPreview" class="text-xs text-slate-400">→ Vai configurar <strong>5 cuecas</strong> na lista</span>
+            <input id="newTripDaysInput" type="number" min="1" max="90" value="4"
+              oninput="updateUnderwearPreview(this.value)"
+              class="w-28 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm font-semibold focus:outline-none focus:border-blue-500" />
+            <span id="underwearCalcPreview" class="text-xs text-slate-400">→ Vai configurar <strong>5 cuecas</strong> na
+              lista</span>
           </div>
         </div>
 
@@ -410,7 +465,8 @@
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">
               Grupos incluídos <span class="font-normal text-slate-500">(desmarque o que não vai levar)</span>
             </label>
-            <button type="button" onclick="toggleAllSourceCategories()" class="text-[11px] text-blue-400 hover:underline">Inverter</button>
+            <button type="button" onclick="toggleAllSourceCategories()"
+              class="text-[11px] text-blue-400 hover:underline">Inverter</button>
           </div>
           <div id="newTripCategoriesChips" class="flex flex-wrap gap-1.5 pt-1">
             <!-- Chips de categorias renderizados via JS -->
@@ -418,8 +474,10 @@
         </div>
 
         <!-- Abrir no Modo Poda -->
-        <label class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-borderDark cursor-pointer">
-          <input id="startInPruneModeCheckbox" type="checkbox" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0" />
+        <label
+          class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-borderDark cursor-pointer">
+          <input id="startInPruneModeCheckbox" type="checkbox" checked
+            class="w-4 h-4 rounded text-blue-600 focus:ring-0" />
           <div class="text-xs">
             <div class="font-semibold">Já abrir no "Modo Poda"</div>
             <div class="text-slate-400">Para tirar itens avulsos com 1 clique antes de começar a arrumar a mala</div>
@@ -428,8 +486,10 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-borderDark">
-        <button onclick="closeNewTripModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800">Cancelar</button>
-        <button onclick="confirmCreateTrip()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm">
+        <button onclick="closeNewTripModal()"
+          class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800">Cancelar</button>
+        <button onclick="confirmCreateTrip()"
+          class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm">
           Criar & Abrir Lista
         </button>
       </div>
@@ -438,7 +498,8 @@
 
   <!-- MODAL: GITHUB GIST SYNC -->
   <div id="gistModal" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4">
+    <div
+      class="bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <div class="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center">
@@ -454,45 +515,57 @@
         </button>
       </div>
 
-      <div class="text-xs text-slate-500 dark:text-slate-400 space-y-2 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-borderDark">
+      <div
+        class="text-xs text-slate-500 dark:text-slate-400 space-y-2 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-borderDark">
         <p class="font-semibold text-slate-700 dark:text-slate-200">Como configurar em 30 segundos:</p>
         <ol class="list-decimal list-inside space-y-1">
-          <li>No GitHub, vá em <strong>Settings → Developer settings → Personal access tokens (Classic ou Fine-grained)</strong>.</li>
+          <li>No GitHub, vá em <strong>Settings → Developer settings → Personal access tokens (Classic ou
+              Fine-grained)</strong>.</li>
           <li>Gere um token marcando apenas o escopo <code>gist</code>.</li>
-          <li>Cole o token abaixo. Se deixar o <strong>Gist ID</strong> em branco, o app descobre ou cria um Gist secreto automaticamente pra você.</li>
+          <li>Cole o token abaixo. Se deixar o <strong>Gist ID</strong> em branco, o app descobre ou cria um Gist
+            secreto automaticamente pra você.</li>
         </ol>
       </div>
 
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">GitHub Personal Access Token</label>
-          <input id="gistTokenInput" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-xs sm:text-sm font-mono focus:outline-none focus:border-blue-500" />
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">GitHub Personal Access
+            Token</label>
+          <input id="gistTokenInput" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-xs sm:text-sm font-mono focus:outline-none focus:border-blue-500" />
         </div>
 
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Gist ID (Opcional se já existir)</label>
-            <button onclick="autoDiscoverGist()" class="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Gist ID (Opcional se já
+              existir)</label>
+            <button onclick="autoDiscoverGist()"
+              class="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
               <i class="fa-solid fa-wand-magic-sparkles"></i> Buscar meu Gist existente
             </button>
           </div>
-          <input id="gistIdInput" type="text" placeholder="Deixe vazio para criar um novo automaticamente" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-xs sm:text-sm font-mono focus:outline-none focus:border-blue-500" />
+          <input id="gistIdInput" type="text" placeholder="Deixe vazio para criar um novo automaticamente"
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-xs sm:text-sm font-mono focus:outline-none focus:border-blue-500" />
         </div>
       </div>
 
       <div id="gistFeedbackMsg" class="text-xs hidden p-2.5 rounded-lg"></div>
 
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-borderDark">
+      <div
+        class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-borderDark">
         <div class="flex gap-2">
-          <button onclick="pullFromGist(true)" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+          <button onclick="pullFromGist(true)"
+            class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
             <i class="fa-solid fa-cloud-arrow-down text-blue-400"></i> Puxar da Nuvem
           </button>
-          <button onclick="pushToGist(true)" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+          <button onclick="pushToGist(true)"
+            class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
             <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Forçar Envio
           </button>
         </div>
 
-        <button onclick="saveGistConfig()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white">
+        <button onclick="saveGistConfig()"
+          class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white">
           Salvar & Conectar
         </button>
       </div>
@@ -500,7 +573,8 @@
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-200 pointer-events-none bg-slate-900 text-white border border-slate-700 px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-medium">
+  <div id="toast"
+    class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-200 pointer-events-none bg-slate-900 text-white border border-slate-700 px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-medium">
     <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
     <span id="toastMsg">Salvo com sucesso</span>
   </div>
@@ -827,11 +901,10 @@
           <button
             type="button"
             onclick="toggleModalCategoryChip('${cat.id}')"
-            class="px-2.5 py-1.5 rounded-xl text-xs font-medium border transition flex items-center gap-1.5 ${
-              isSelected
-                ? 'bg-blue-500/15 border-blue-500/50 text-blue-400'
-                : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-borderDark text-slate-400 line-through opacity-60'
-            }"
+            class="px-2.5 py-1.5 rounded-xl text-xs font-medium border transition flex items-center gap-1.5 ${isSelected
+            ? 'bg-blue-500/15 border-blue-500/50 text-blue-400'
+            : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-borderDark text-slate-400 line-through opacity-60'
+          }"
           >
             <i class="fa-solid ${isSelected ? 'fa-check text-[10px]' : 'fa-xmark text-[10px]'}"></i>
             <span>${escapeHtml(cat.name)}</span>
@@ -1173,11 +1246,10 @@
       const tplBtn = document.getElementById('navTemplateBtn');
       const isTpl = isTemplateView();
 
-      tplBtn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer ${
-        isTpl 
-          ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' 
+      tplBtn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer ${isTpl
+          ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
           : 'border-slate-200 dark:border-borderDark hover:bg-slate-100 dark:hover:bg-slate-800/60'
-      }`;
+        }`;
 
       const tplTotalItems = state.masterTemplate.reduce((acc, c) => acc + c.items.length, 0);
       document.getElementById('templateCountSub').textContent = `${state.masterTemplate.length} grupos • ${tplTotalItems} itens`;
@@ -1206,10 +1278,9 @@
         const dateStr = new Date(trip.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
 
         return `
-          <div onclick="selectView('${trip.id}')" class="cursor-pointer p-2.5 rounded-xl border transition group ${
-            active 
-              ? 'bg-blue-600/15 border-blue-500/50 text-blue-400' 
-              : 'border-transparent hover:bg-slate-100 dark:hover:bg-slate-800/60'
+          <div onclick="selectView('${trip.id}')" class="cursor-pointer p-2.5 rounded-xl border transition group ${active
+            ? 'bg-blue-600/15 border-blue-500/50 text-blue-400'
+            : 'border-transparent hover:bg-slate-100 dark:hover:bg-slate-800/60'
           }">
             <div class="flex items-center justify-between gap-1">
               <div class="font-semibold text-xs sm:text-sm truncate">${escapeHtml(trip.name)}</div>
@@ -1248,7 +1319,7 @@
 
       if (isTpl) {
         viewBadge.textContent = 'Template Mestre';
-        viewBadge.className = 'text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30';
+        viewBadge.className = 'hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30';
         titleEl.textContent = 'viagem base (Template)';
         subEl.textContent = 'Sua lista matriz intocável. Quando for viajar, clique em "Nova Viagem" para duplicar e podar sem perder nada daqui.';
         daysPill.classList.add('hidden');
@@ -1263,17 +1334,16 @@
         `;
       } else if (trip) {
         viewBadge.textContent = 'Viagem Ativa';
-        viewBadge.className = 'text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+        viewBadge.className = 'hidden sm:inline-flex text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
         titleEl.textContent = trip.name;
         subEl.textContent = 'Podou o que não vai levar? Vá marcando conforme coloca na mochila. Na hora de voltar pra casa, use o botão "Mala de Volta".';
         daysPill.textContent = `${trip.days || 4} dias`;
         daysPill.classList.remove('hidden');
 
         toolbar.innerHTML = `
-          <button onclick="togglePruneMode()" class="px-3 py-2 rounded-xl text-xs font-semibold border transition flex items-center gap-1.5 ${
-            state.pruneMode 
-              ? 'bg-rose-500 text-white border-rose-500' 
-              : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-borderDark hover:border-rose-500/50 text-slate-700 dark:text-slate-200'
+          <button onclick="togglePruneMode()" class="px-3 py-2 rounded-xl text-xs font-semibold border transition flex items-center gap-1.5 ${state.pruneMode
+            ? 'bg-rose-500 text-white border-rose-500'
+            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-borderDark hover:border-rose-500/50 text-slate-700 dark:text-slate-200'
           }">
             <i class="fa-solid fa-scissors"></i>
             <span>${state.pruneMode ? 'Sair da Poda' : 'Modo Poda'}</span>
@@ -1343,9 +1413,9 @@
       grid.innerHTML = categories.map(cat => {
         const filteredItems = cat.items.filter(item => {
           const matchesSearch = !q || item.name.toLowerCase().includes(q) || cat.name.toLowerCase().includes(q);
-          const matchesFilter = 
+          const matchesFilter =
             state.filter === 'all' ? true :
-            state.filter === 'packed' ? !!item.packed : !item.packed;
+              state.filter === 'packed' ? !!item.packed : !item.packed;
           return matchesSearch && matchesFilter;
         });
 
@@ -1373,11 +1443,10 @@
               </div>
 
               <div class="flex items-center gap-1.5 shrink-0">
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md ${
-                  pctCat === 100 && totalCat > 0 
-                    ? 'bg-emerald-500/15 text-emerald-400' 
-                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                }">
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md ${pctCat === 100 && totalCat > 0
+            ? 'bg-emerald-500/15 text-emerald-400'
+            : 'bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+          }">
                   ${packedCat}/${totalCat}
                 </span>
 
@@ -1406,11 +1475,10 @@
               ${filteredItems.map(item => `
                 <li 
                   onclick="handleItemClick('${cat.id}', '${item.id}')"
-                  class="px-4 py-2.5 flex items-center justify-between gap-2 cursor-pointer select-none transition group ${
-                    state.pruneMode 
-                      ? 'hover:bg-rose-500/15' 
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                  }"
+                  class="px-4 py-2.5 flex items-center justify-between gap-2 cursor-pointer select-none transition group ${state.pruneMode
+              ? 'hover:bg-rose-500/15'
+              : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }"
                 >
                   <div class="flex items-center gap-3 min-w-0 flex-1">
                     ${state.pruneMode ? `
@@ -1418,17 +1486,15 @@
                         <i class="fa-solid fa-minus text-[10px]"></i>
                       </span>
                     ` : `
-                      <div class="w-5 h-5 rounded-md border flex items-center justify-center transition shrink-0 ${
-                        item.packed 
-                          ? 'bg-emerald-500 border-emerald-500 text-white' 
-                          : 'border-slate-300 dark:border-slate-600 group-hover:border-blue-400'
-                      }">
+                      <div class="w-5 h-5 rounded-md border flex items-center justify-center transition shrink-0 ${item.packed
+              ? 'bg-emerald-500 border-emerald-500 text-white'
+              : 'border-slate-300 dark:border-slate-600 group-hover:border-blue-400'
+            }">
                         ${item.packed ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}
                       </div>
                     `}
-                    <span class="text-xs sm:text-sm truncate ${
-                      item.packed && !state.pruneMode ? 'line-through text-slate-400 dark:text-slate-500' : ''
-                    }">
+                    <span class="text-xs sm:text-sm truncate ${item.packed && !state.pruneMode ? 'line-through text-slate-400 dark:text-slate-500' : ''
+            }">
                       ${escapeHtml(item.name)}
                     </span>
                   </div>
@@ -1485,7 +1551,7 @@
       try {
         const raw = localStorage.getItem(GIST_CONFIG_KEY);
         if (raw) gistConfig = JSON.parse(raw);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     function openGistModal() {
@@ -1810,4 +1876,5 @@
     }
   </script>
 </body>
+
 </html>
