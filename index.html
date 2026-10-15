@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>PackKeep — Checklist & Histórico de Viagens</title>
+
+  <!-- Configurações de PWA para iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="PackKeep" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0f1117" />
+
+  <!-- Gerador single-file de Ícone PNG (apple-touch-icon) e Manifest JSON -->
+  <script>
+    (function setupSingleFilePWA() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Fundo escuro (#1e293b -> #0f1117)
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#1e293b');
+        grad.addColorStop(1, '#0f1117');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Bloco central azul
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath();
+        ctx.roundRect(86, 86, 340, 340, 80);
+        ctx.fill();
+
+        // Alça da mala
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 24;
+        ctx.beginPath();
+        ctx.roundRect(206, 138, 100, 64, 18);
+        ctx.stroke();
+
+        // Corpo da mala
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.roundRect(146, 186, 220, 175, 30);
+        ctx.fill();
+
+        // Detalhes verticais da mala
+        ctx.fillStyle = '#2563eb';
+        ctx.fillRect(202, 186, 16, 175);
+        ctx.fillRect(294, 186, 16, 175);
+
+        const iconDataUrl = canvas.toDataURL('image/png');
+
+        // Injeta o ícone para a Tela de Início do iOS
+        const appleIcon = document.createElement('link');
+        appleIcon.rel = 'apple-touch-icon';
+        appleIcon.href = iconDataUrl;
+        document.head.appendChild(appleIcon);
+
+        // Injeta favicon padrão
+        const favIcon = document.createElement('link');
+        favIcon.rel = 'icon';
+        favIcon.type = 'image/png';
+        favIcon.href = iconDataUrl;
+        document.head.appendChild(favIcon);
+
+        // Injeta o Web App Manifest dinâmico
+        const manifest = {
+          name: 'PackKeep — Checklist de Viagens',
+          short_name: 'PackKeep',
+          start_url: '.',
+          display: 'standalone',
+          background_color: '#0f1117',
+          theme_color: '#0f1117',
+          icons: [{ src: iconDataUrl, sizes: '512x512', type: 'image/png' }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = URL.createObjectURL(manifestBlob);
+        document.head.appendChild(manifestLink);
+      } catch (e) {
+        console.warn('Erro ao gerar assets de PWA:', e);
+      }
+    })();
+  </script>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#0f1117',
+            cardDark: '#181b24',
+            borderDark: '#262b38',
+            accent: '#3b82f6',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      padding-bottom: env(safe-area-inset-bottom);
+      overscroll-behavior-y: none;
+    }
+    /* Ajustes de Safe Area para o Notch / Dynamic Island no iPhone */
+    header {
+      padding-top: env(safe-area-inset-top);
+    }
+    #sidebar {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    @media (min-width: 1024px) {
+      #sidebar {
+        padding-top: 0;
+      }
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.25);
+      border-radius: 9999px;
+    }
+    .prune-shake {
+      animation: subtlePulse 1.8s infinite ease-in-out;
+    }
+    @keyframes subtlePulse {
+      0%, 100% { border-color: rgba(244, 63, 94, 0.35); }
+      50% { border-color: rgba(244, 63, 94, 0.85); }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-bgDark text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-cardDark/90 backdrop-blur-md border-b border-slate-200 dark:border-borderDark">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Left: Brand & Mobile Drawer Toggle -->
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+            <i class="fa-solid fa-suitcase-rolling"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold tracking-tight text-base">PackKeep</span>
+              <span id="viewBadge" class="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                Template
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Duplique, pode os grupos, faça a mala e dê uncheck na volta</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Quick Actions & Gist Sync -->
+      <div class="flex items-center gap-2">
+        <!-- Gist Status Pill -->
+        <button onclick="openGistModal()" id="gistStatusBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-borderDark bg-slate-50 dark:bg-slate-800/70 hover:border-blue-500/50 transition">
+          <span id="syncDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+          <i class="fa-brands fa-github text-sm"></i>
+          <span id="syncText" class="hidden sm:inline">Gist Local</span>
+        </button>
+
+        <!-- New Trip CTA -->
+        <button onclick="openNewTripModal('TEMPLATE')" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-600/25 transition">
+          <i class="fa-solid fa-plus"></i>
+          <span>Nova Viagem</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Alternar Tema">
+          <i id="themeIcon" class="fa-solid fa-sun"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <div class="max-w-7xl w-full mx-auto flex-1 flex relative">
+
+    <!-- SIDEBAR (Desktop Sticky + Mobile Drawer) -->
+    <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-40 hidden lg:hidden"></div>
+    
+    <aside id="sidebar" class="fixed lg:sticky top-0 lg:top-16 left-0 z-50 lg:z-10 w-72 h-full lg:h-[calc(100vh-4rem)] bg-white dark:bg-cardDark border-r border-slate-200 dark:border-borderDark flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out">
+      
+      <div class="p-4 border-b border-slate-200 dark:border-borderDark flex items-center justify-between lg:hidden">
+        <span class="font-bold text-sm">Navegação & Histórico</span>
+        <button onclick="toggleSidebar()" class="p-1.5 text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-3 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+        
+        <!-- Master Template Card -->
+        <div>
+          <div class="px-2 mb-2 flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Matriz Principal</span>
+          </div>
+          <div id="navTemplateBtn" onclick="selectView('TEMPLATE')" class="w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-thumbtack text-sm"></i>
+              </div>
+              <div class="truncate">
+                <div class="font-semibold text-sm truncate">viagem base</div>
+                <div id="templateCountSub" class="text-xs text-slate-400">Template Mestre</div>
+              </div>
+            </div>
+            <button onclick="event.stopPropagation(); openNewTripModal('TEMPLATE')" title="Criar viagem a partir do Template" class="opacity-70 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-blue-400 transition">
+              <i class="fa-regular fa-copy text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Trips History List -->
+        <div>
+          <div class="px-2 mb-2 flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Minhas Viagens</span>
+            <span id="tripsTotalBadge" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-medium">0</span>
+          </div>
+          <div id="tripsListContainer" class="space-y-1.5">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sidebar Footer: Backup / Restore Template -->
+      <div class="p-3 border-t border-slate-200 dark:border-borderDark bg-slate-50/50 dark:bg-slate-900/40 space-y-2">
+        <div class="flex gap-2">
+          <button onclick="exportDataJson()" class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-borderDark hover:border-blue-500/40 flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-download text-slate-400"></i> Exportar
+          </button>
+          <label class="flex-1 py-1.5 px-2.5 rounded-lg text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-borderDark hover:border-blue-500/40 flex items-center justify-center gap-1.5 cursor-pointer transition">
+            <i class="fa-solid fa-upload text-slate-400"></i> Importar
+            <input type="file" accept=".json" onchange="importDataJson(event)" class="hidden" />
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+
+      <!-- HEADER CARD & PROGRESS BAR -->
+      <section class="bg-white dark:bg-cardDark rounded-2xl p-5 border border-slate-200 dark:border-borderDark shadow-sm space-y-4">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <h1 id="currentTitle" class="text-xl sm:text-2xl font-bold tracking-tight">viagem base</h1>
+              <span id="tripDaysPill" class="hidden text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30"></span>
+            </div>
+            <p id="currentSubtitle" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Edite sua lista matriz. Tudo o que estiver aqui servirá de base quando você criar uma viagem nova.
+            </p>
+          </div>
+
+          <!-- Context Action Buttons -->
+          <div id="tripActionsToolbar" class="flex flex-wrap items-center gap-2">
+            <!-- Populated dynamically depending on Template vs Active Trip -->
+          </div>
+        </div>
+
+        <!-- PROGRESS BAR (Shown on Active Trips, or Preview on Template) -->
+        <div id="progressSection" class="pt-2 border-t border-slate-100 dark:border-borderDark/80 space-y-2">
+          <div class="flex items-center justify-between text-xs sm:text-sm">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold" id="progressText">0 de 0 itens na mala</span>
+              <span id="progressStatusTag" class="text-xs text-slate-400"></span>
+            </div>
+            <span id="progressPercentage" class="font-bold text-blue-500 text-base">0%</span>
+          </div>
+          <div class="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden p-0.5">
+            <div id="progressBarFill" class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- PRUNE MODE BANNER -->
+        <div id="pruneBanner" class="hidden rounded-xl bg-rose-500/10 border border-rose-500/30 p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5 text-rose-400 text-xs sm:text-sm">
+            <i class="fa-solid fa-scissors text-base"></i>
+            <div>
+              <span class="font-semibold">Modo Poda Ativo:</span> Clique em qualquer item para tirá-lo desta viagem, ou clique em <strong>"Remover Grupo"</strong> no topo de uma caixa para sumir com a categoria inteira.
+            </div>
+          </div>
+          <button onclick="togglePruneMode(false)" class="px-3 py-1.5 rounded-lg bg-rose-500 text-white text-xs font-semibold hover:bg-rose-600 shrink-0">
+            Concluir Poda
+          </button>
+        </div>
+
+      </section>
+
+      <!-- FILTERS, SEARCH & QUICK ADD -->
+      <section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        
+        <!-- Filter Tabs -->
+        <div id="filterTabs" class="flex items-center bg-white dark:bg-cardDark p-1 rounded-xl border border-slate-200 dark:border-borderDark self-start">
+          <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            Todos
+          </button>
+          <button onclick="setFilter('unpacked')" id="filter-unpacked" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            Faltam
+          </button>
+          <button onclick="setFilter('packed')" id="filter-packed" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            Na Mala
+          </button>
+        </div>
+
+        <!-- Search + New Category -->
+        <div class="flex items-center gap-2 flex-1 sm:max-w-md">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input 
+              id="searchInput"
+              type="text" 
+              oninput="handleSearch(this.value)"
+              placeholder="Filtrar item (ex: carregador, violeta, cabo)..." 
+              class="w-full pl-8 pr-8 py-2 rounded-xl bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark text-xs sm:text-sm focus:outline-none focus:border-blue-500"
+            />
+            <button id="clearSearchBtn" onclick="handleSearch('')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+              <i class="fa-solid fa-circle-xmark text-xs"></i>
+            </button>
+          </div>
+          <button onclick="addNewCategoryPrompt()" class="px-3 py-2 rounded-xl bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark hover:border-blue-500/50 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition" title="Nova Categoria">
+            <i class="fa-solid fa-folder-plus text-blue-500"></i>
+            <span class="hidden md:inline">Categoria</span>
+          </button>
+        </div>
+
+      </section>
+
+      <!-- CATEGORIES MASONRY / GRID -->
+      <section id="categoriesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+        <!-- Rendered by JS -->
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: NOVA VIAGEM (Duplicar do Template ou de outra Viagem) -->
+  <div id="newTripModal" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-500 flex items-center justify-center">
+            <i class="fa-solid fa-copy"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Nova Viagem</h3>
+            <p class="text-xs text-slate-400">Duplique do template ou de uma viagem que já deu certo</p>
+          </div>
+        </div>
+        <button onclick="closeNewTripModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3.5 overflow-y-auto pr-1 custom-scrollbar">
+        <!-- Origem da Cópia -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Copiar itens de (Origem)</label>
+          <select id="newTripSourceSelect" onchange="onNewTripSourceChange()" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm focus:outline-none focus:border-blue-500">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+
+        <!-- Nome da Viagem -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Nome da Viagem</label>
+          <input id="newTripNameInput" type="text" placeholder="Ex: Brasília - Outubro, Fds Praia..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <!-- Dias de Viagem -->
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+            Quantidade de Dias <span class="text-blue-400 font-normal">(calcula "cuecas = dias + 1")</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <input id="newTripDaysInput" type="number" min="1" max="90" value="4" oninput="updateUnderwearPreview(this.value)" class="w-28 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-sm font-semibold focus:outline-none focus:border-blue-500" />
+            <span id="underwearCalcPreview" class="text-xs text-slate-400">→ Vai configurar <strong>5 cuecas</strong> na lista</span>
+          </div>
+        </div>
+
+        <!-- Seleção Rápida de Grupos / Categorias -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Grupos incluídos <span class="font-normal text-slate-500">(desmarque o que não vai levar)</span>
+            </label>
+            <button type="button" onclick="toggleAllSourceCategories()" class="text-[11px] text-blue-400 hover:underline">Inverter</button>
+          </div>
+          <div id="newTripCategoriesChips" class="flex flex-wrap gap-1.5 pt-1">
+            <!-- Chips de categorias renderizados via JS -->
+          </div>
+        </div>
+
+        <!-- Abrir no Modo Poda -->
+        <label class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-borderDark cursor-pointer">
+          <input id="startInPruneModeCheckbox" type="checkbox" checked class="w-4 h-4 rounded text-blue-600 focus:ring-0" />
+          <div class="text-xs">
+            <div class="font-semibold">Já abrir no "Modo Poda"</div>
+            <div class="text-slate-400">Para tirar itens avulsos com 1 clique antes de começar a arrumar a mala</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-borderDark">
+        <button onclick="closeNewTripModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800">Cancelar</button>
+        <button onclick="confirmCreateTrip()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-sm">
+          Criar & Abrir Lista
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GITHUB GIST SYNC -->
+  <div id="gistModal" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="bg-white dark:bg-cardDark border border-slate-200 dark:border-borderDark rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center">
+            <i class="fa-brands fa-github text-lg"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Sincronização via GitHub Gist</h3>
+            <p class="text-xs text-slate-400">Seu banco de dados JSON gratuito e privado na nuvem</p>
+          </div>
+        </div>
+        <button onclick="closeGistModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-500 dark:text-slate-400 space-y-2 bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200 dark:border-borderDark">
+        <p class="font-semibold text-slate-700 dark:text-slate-200">Como configurar em 30 segundos:</p>
+        <ol class="list-decimal list-inside space-y-1">
+          <li>No GitHub, vá em <strong>Settings → Developer settings → Personal access tokens (Classic ou Fine-grained)</strong>.</li>
+          <li>Gere um token marcando apenas o escopo <code>gist</code>.</li>
+          <li>Cole o token abaixo. Se deixar o <strong>Gist ID</strong> em branco, o app descobre ou cria um Gist secreto automaticamente pra você.</li>
+        </ol>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">GitHub Personal Access Token</label>
+          <input id="gistTokenInput" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-xs sm:text-sm font-mono focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Gist ID (Opcional se já existir)</label>
+            <button onclick="autoDiscoverGist()" class="text-[11px] text-blue-400 hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Buscar meu Gist existente
+            </button>
+          </div>
+          <input id="gistIdInput" type="text" placeholder="Deixe vazio para criar um novo automaticamente" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-borderDark text-xs sm:text-sm font-mono focus:outline-none focus:border-blue-500" />
+        </div>
+      </div>
+
+      <div id="gistFeedbackMsg" class="text-xs hidden p-2.5 rounded-lg"></div>
+
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-borderDark">
+        <div class="flex gap-2">
+          <button onclick="pullFromGist(true)" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-cloud-arrow-down text-blue-400"></i> Puxar da Nuvem
+          </button>
+          <button onclick="pushToGist(true)" class="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+            <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i> Forçar Envio
+          </button>
+        </div>
+
+        <button onclick="saveGistConfig()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white">
+          Salvar & Conectar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-200 pointer-events-none bg-slate-900 text-white border border-slate-700 px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-medium">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <span id="toastMsg">Salvo com sucesso</span>
+  </div>
+
+  <script>
+    /********************************************************************
+     * 1. SEU TEMPLATE MESTRE PADRÃO ("viagem base")
+     ********************************************************************/
+    const DEFAULT_MASTER_TEMPLATE = [
+      {
+        id: 'cat_bolsa_maior',
+        name: 'Bolsa maior',
+        icon: 'fa-suitcase',
+        items: [
+          { id: 'bm_1', name: 'Balança', qty: 1 },
+          { id: 'bm_2', name: 'Adaptador', qty: 1 },
+          { id: 'bm_3', name: 'T', qty: 1 },
+          { id: 'bm_4', name: 'Escova teclado', qty: 1 },
+          { id: 'bm_5', name: 'Mouse', qty: 1 },
+          { id: 'bm_6', name: 'headset vermelho', qty: 1 },
+          { id: 'bm_7', name: 'suporte sami', qty: 1 },
+          { id: 'bm_8', name: 'hub mac', qty: 1 },
+          { id: 'bm_9', name: 'mouse (reserva)', qty: 1 },
+          { id: 'bm_10', name: 'carregador', qty: 1 },
+          { id: 'bm_11', name: 'mibox + fonte', qty: 1 },
+          { id: 'bm_12', name: 'controle mibox', qty: 1 },
+          { id: 'bm_13', name: 'carregador 3 em 1', qty: 1 }
+        ]
+      },
+      {
+        id: 'cat_bolsa_menor',
+        name: 'Bolsa menor',
+        icon: 'fa-briefcase',
+        items: [
+          { id: 'bmn_1', name: 'cabo iphone', qty: 1 },
+          { id: 'bmn_2', name: 'Carregador watch', qty: 1 },
+          { id: 'bmn_3', name: 'hdmi', qty: 1 },
+          { id: 'bmn_4', name: 'chicote', qty: 1 },
+          { id: 'bmn_5', name: 'type c moderno', qty: 1 },
+          { id: 'bmn_6', name: 'thunderbolt', qty: 1 },
+          { id: 'bmn_7', name: 'cabo universal', qty: 1 },
+          { id: 'bmn_8', name: 'kz', qty: 1 },
+          { id: 'bmn_9', name: 'Body', qty: 1 },
+          { id: 'bmn_10', name: 'Airpods', qty: 1 },
+          { id: 'bmn_11', name: 'watch', qty: 1 },
+          { id: 'bmn_12', name: 'cordão', qty: 1 },
+          { id: 'bmn_13', name: 'carteira + rg', qty: 1 },
+          { id: 'bmn_14', name: 'lactase', qty: 1 },
+          { id: 'bmn_15', name: 'bilhete único', qty: 1 },
+          { id: 'bmn_16', name: 'cartão sala vip', qty: 1 },
+          { id: 'bmn_17', name: 'passaport', qty: 1 },
+          { id: 'bmn_18', name: 'xteink', qty: 1 },
+          { id: 'bmn_19', name: 'aneis', qty: 1 },
+          { id: 'bmn_20', name: 'notepad', qty: 1 },
+          { id: 'bmn_21', name: '3 em 1', qty: 1 }
+        ]
+      },
+      {
+        id: 'cat_care',
+        name: 'Care',
+        icon: 'fa-pump-soap',
+        items: [
+          { id: 'cr_1', name: 'travatan', qty: 1 },
+          { id: 'cr_2', name: 'escova', qty: 1 },
+          { id: 'cr_3', name: 'pasta', qty: 1 },
+          { id: 'cr_4', name: 'cremes + xampu', qty: 1 },
+          { id: 'cr_5', name: 'fio dental', qty: 1 },
+          { id: 'cr_6', name: 'sabonete', qty: 1 },
+          { id: 'cr_7', name: 'desodorante', qty: 1 },
+          { id: 'cr_8', name: 'perfume', qty: 1 }
+        ]
+      },
+      {
+        id: 'cat_remedios',
+        name: 'Remédios',
+        icon: 'fa-pills',
+        items: [
+          { id: 'rm_1', name: 'exodus', qty: 1 },
+          { id: 'rm_2', name: 'desduo', qty: 1 },
+          { id: 'rm_3', name: 'aymee', qty: 1 }
+        ]
+      },
+      {
+        id: 'cat_setup_avulsos',
+        name: 'Tech, Conforto & Geral',
+        icon: 'fa-laptop-code',
+        items: [
+          { id: 'av_1', name: 'smoke', qty: 1 },
+          { id: 'av_2', name: 'rayban meta', qty: 1 },
+          { id: 'av_3', name: 'camisa andré', qty: 1 },
+          { id: 'av_4', name: 'Mascara sono', qty: 1 },
+          { id: 'av_5', name: 'travesseiro inflável', qty: 1 },
+          { id: 'av_6', name: 'garrafa agua mole', qty: 1 },
+          { id: 'av_7', name: 'Caderno e caneta', qty: 1 },
+          { id: 'av_8', name: 'kobo', qty: 1 },
+          { id: 'av_9', name: 'tripé magsafe', qty: 1 },
+          { id: 'av_10', name: 'cubo', qty: 1 },
+          { id: 'av_11', name: 'powerbank', qty: 1 },
+          { id: 'av_12', name: 'doleira', qty: 1 },
+          { id: 'av_13', name: 'wings', qty: 1 },
+          { id: 'av_14', name: 'dell', qty: 1 },
+          { id: 'av_15', name: 'mac', qty: 1 },
+          { id: 'av_16', name: 'monitor', qty: 1 },
+          { id: 'av_17', name: 'tv box', qty: 1 },
+          { id: 'av_18', name: 'teclado', qty: 1 },
+          { id: 'av_19', name: 'headphone', qty: 1 },
+          { id: 'av_20', name: 'oculos escuro', qty: 1 },
+          { id: 'av_21', name: 'ipad', qty: 1 }
+        ]
+      },
+      {
+        id: 'cat_violeta',
+        name: 'Violeta',
+        icon: 'fa-child-reaching',
+        items: [
+          { id: 'vi_1', name: 'docs mavi', qty: 1 },
+          { id: 'vi_2', name: 'leite', qty: 1 },
+          { id: 'vi_3', name: 'mamadeira', qty: 1 },
+          { id: 'vi_4', name: 'caixa fraldas', qty: 1 },
+          { id: 'vi_5', name: 'bastão sabão', qty: 1 },
+          { id: 'vi_6', name: 'arma sabão', qty: 1 },
+          { id: 'vi_7', name: 'arma água', qty: 1 },
+          { id: 'vi_8', name: 'desenhos', qty: 1 },
+          { id: 'vi_9', name: 'marmitas', qty: 1 }
+        ]
+      },
+      {
+        id: 'cat_roupas',
+        name: 'Roupas',
+        icon: 'fa-shirt',
+        items: [
+          { id: 'rp_1', name: 'roupas', qty: 1 },
+          { id: 'rp_2', name: 'cinto', qty: 1 },
+          { id: 'rp_3', name: 'boné', qty: 1 },
+          { id: 'rp_4', name: 'chinelo', qty: 1 },
+          { id: 'rp_5', name: 'tênis corrida', qty: 1 },
+          { id: 'rp_6', name: 'cuecas (x dias + 1)', qty: 5, formula: 'days_plus_1' }
+        ]
+      }
+    ];
+
+    /********************************************************************
+     * 2. ESTADO GLOBAL DA APLICAÇÃO
+     ********************************************************************/
+    const STORAGE_KEY = 'packkeep_state_v1';
+    const GIST_CONFIG_KEY = 'packkeep_gist_config';
+    const GIST_FILENAME = 'packkeep_db.json';
+
+    let state = {
+      currentView: 'TEMPLATE', // 'TEMPLATE' ou trip.id
+      filter: 'all',           // 'all' | 'unpacked' | 'packed'
+      searchQuery: '',
+      pruneMode: false,
+      updatedAt: new Date().toISOString(),
+      masterTemplate: JSON.parse(JSON.stringify(DEFAULT_MASTER_TEMPLATE)),
+      trips: [] // [{ id, name, createdAt, days, categories: [...] }]
+    };
+
+    let gistConfig = {
+      token: '',
+      gistId: ''
+    };
+
+    let syncTimeout = null;
+    // Controla quais categorias estão marcadas no modal de "Nova Viagem"
+    let modalSelectedCategoryIds = new Set();
+
+    /********************************************************************
+     * 3. INICIALIZAÇÃO
+     ********************************************************************/
+    window.addEventListener('DOMContentLoaded', async () => {
+      loadLocalState();
+      loadGistConfig();
+      renderAll();
+
+      // Se tiver Gist configurado, busca a versão mais recente ao abrir
+      if (gistConfig.token && gistConfig.gistId) {
+        await pullFromGist(false);
+      }
+    });
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state = {
+            ...state,
+            ...parsed,
+            masterTemplate: parsed.masterTemplate || JSON.parse(JSON.stringify(DEFAULT_MASTER_TEMPLATE)),
+            trips: parsed.trips || []
+          };
+        }
+      } catch (e) {
+        console.error('Erro ao ler localStorage:', e);
+      }
+    }
+
+    function saveState(triggerCloudSync = true) {
+      state.updatedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (triggerCloudSync && gistConfig.token) {
+        scheduleGistPush();
+      }
+    }
+
+    /********************************************************************
+     * 4. SELETORES DE DADOS ATUAIS (Template vs Viagem)
+     ********************************************************************/
+    function isTemplateView() {
+      return state.currentView === 'TEMPLATE';
+    }
+
+    function getActiveTrip() {
+      if (isTemplateView()) return null;
+      return state.trips.find(t => t.id === state.currentView) || null;
+    }
+
+    function getCurrentCategories() {
+      if (isTemplateView()) {
+        return state.masterTemplate;
+      }
+      const trip = getActiveTrip();
+      return trip ? trip.categories : state.masterTemplate;
+    }
+
+    function selectView(viewId) {
+      state.currentView = viewId;
+      state.pruneMode = false;
+      saveState(false);
+      renderAll();
+      if (window.innerWidth < 1024) {
+        const sb = document.getElementById('sidebar');
+        if (!sb.classList.contains('-translate-x-full')) toggleSidebar();
+      }
+    }
+
+    /********************************************************************
+     * 5. FLUXO DE VIAGENS (Duplicar do Template ou de outra Viagem)
+     ********************************************************************/
+    function getSourceCategoriesById(sourceId) {
+      if (sourceId === 'TEMPLATE') {
+        return state.masterTemplate;
+      }
+      const foundTrip = state.trips.find(t => t.id === sourceId);
+      return foundTrip ? foundTrip.categories : state.masterTemplate;
+    }
+
+    function countTotalItemsInCategories(cats) {
+      return (cats || []).reduce((acc, c) => acc + (c.items ? c.items.length : 0), 0);
+    }
+
+    function openNewTripModal(preselectedSourceId) {
+      const modal = document.getElementById('newTripModal');
+      const select = document.getElementById('newTripSourceSelect');
+      const nameInput = document.getElementById('newTripNameInput');
+      const daysInput = document.getElementById('newTripDaysInput');
+
+      // Define origem padrão: se foi passado um ID usa ele; senão, se estiver vendo uma viagem usa ela, ou TEMPLATE
+      const defaultSource = preselectedSourceId || (isTemplateView() ? 'TEMPLATE' : state.currentView);
+
+      // Popula o Select com o Template Mestre + Viagens existentes
+      const tplCount = countTotalItemsInCategories(state.masterTemplate);
+      let optionsHtml = `<option value="TEMPLATE">📌 Template Mestre: viagem base (${tplCount} itens)</option>`;
+
+      state.trips.forEach(t => {
+        const count = countTotalItemsInCategories(t.categories);
+        optionsHtml += `<option value="${t.id}">🧳 Viagem: ${escapeHtml(t.name)} (${count} itens)</option>`;
+      });
+
+      select.innerHTML = optionsHtml;
+      select.value = defaultSource;
+
+      // Sugere nome e dias
+      const today = new Date();
+      const monthName = today.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+      if (defaultSource !== 'TEMPLATE') {
+        const srcTrip = state.trips.find(t => t.id === defaultSource);
+        nameInput.value = srcTrip ? `${srcTrip.name} (Cópia)` : `Viagem ${monthName}`;
+        daysInput.value = srcTrip && srcTrip.days ? srcTrip.days : 4;
+      } else {
+        nameInput.value = `Viagem ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`;
+        daysInput.value = 4;
+      }
+
+      updateUnderwearPreview(daysInput.value);
+      renderSourceCategoriesChips();
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => nameInput.select(), 50);
+    }
+
+    function onNewTripSourceChange() {
+      const sourceId = document.getElementById('newTripSourceSelect').value;
+      const daysInput = document.getElementById('newTripDaysInput');
+      if (sourceId !== 'TEMPLATE') {
+        const srcTrip = state.trips.find(t => t.id === sourceId);
+        if (srcTrip && srcTrip.days) {
+          daysInput.value = srcTrip.days;
+          updateUnderwearPreview(srcTrip.days);
+        }
+      }
+      renderSourceCategoriesChips();
+    }
+
+    function renderSourceCategoriesChips() {
+      const sourceId = document.getElementById('newTripSourceSelect').value;
+      const cats = getSourceCategoriesById(sourceId);
+      modalSelectedCategoryIds = new Set(cats.map(c => c.id));
+      drawCategoryChipsUI(cats);
+    }
+
+    function drawCategoryChipsUI(cats) {
+      const container = document.getElementById('newTripCategoriesChips');
+      if (!cats || cats.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400">Nenhum grupo disponível nesta origem.</span>`;
+        return;
+      }
+
+      container.innerHTML = cats.map(cat => {
+        const isSelected = modalSelectedCategoryIds.has(cat.id);
+        return `
+          <button
+            type="button"
+            onclick="toggleModalCategoryChip('${cat.id}')"
+            class="px-2.5 py-1.5 rounded-xl text-xs font-medium border transition flex items-center gap-1.5 ${
+              isSelected
+                ? 'bg-blue-500/15 border-blue-500/50 text-blue-400'
+                : 'bg-slate-100 dark:bg-slate-800/50 border-slate-200 dark:border-borderDark text-slate-400 line-through opacity-60'
+            }"
+          >
+            <i class="fa-solid ${isSelected ? 'fa-check text-[10px]' : 'fa-xmark text-[10px]'}"></i>
+            <span>${escapeHtml(cat.name)}</span>
+            <span class="text-[10px] opacity-70">(${cat.items.length})</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleModalCategoryChip(catId) {
+      const sourceId = document.getElementById('newTripSourceSelect').value;
+      const cats = getSourceCategoriesById(sourceId);
+      if (modalSelectedCategoryIds.has(catId)) {
+        if (modalSelectedCategoryIds.size <= 1) {
+          showToast('Mantenha pelo menos 1 grupo selecionado', 'fa-circle-exclamation');
+          return;
+        }
+        modalSelectedCategoryIds.delete(catId);
+      } else {
+        modalSelectedCategoryIds.add(catId);
+      }
+      drawCategoryChipsUI(cats);
+    }
+
+    function toggleAllSourceCategories() {
+      const sourceId = document.getElementById('newTripSourceSelect').value;
+      const cats = getSourceCategoriesById(sourceId);
+      if (modalSelectedCategoryIds.size === cats.length) {
+        // Desmarca todas menos a última (ou Bolsa menor) para nunca criar vazio
+        modalSelectedCategoryIds = new Set([cats[0].id]);
+      } else {
+        modalSelectedCategoryIds = new Set(cats.map(c => c.id));
+      }
+      drawCategoryChipsUI(cats);
+    }
+
+    function closeNewTripModal() {
+      const modal = document.getElementById('newTripModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function updateUnderwearPreview(daysVal) {
+      const d = Math.max(1, parseInt(daysVal) || 1);
+      const preview = document.getElementById('underwearCalcPreview');
+      preview.innerHTML = `→ Vai configurar <strong>${d + 1} cuecas</strong> (${d} dias + 1)`;
+    }
+
+    function confirmCreateTrip() {
+      const sourceId = document.getElementById('newTripSourceSelect').value;
+      const nameInput = document.getElementById('newTripNameInput');
+      const daysInput = document.getElementById('newTripDaysInput');
+      const startPrune = document.getElementById('startInPruneModeCheckbox').checked;
+
+      const tripName = (nameInput.value || 'Nova Viagem').trim();
+      const days = Math.max(1, parseInt(daysInput.value) || 4);
+
+      const sourceCategories = getSourceCategoriesById(sourceId);
+
+      // Clona apenas as categorias selecionadas nos chips e reseta packed = false
+      const clonedCategories = JSON.parse(JSON.stringify(sourceCategories))
+        .filter(cat => modalSelectedCategoryIds.has(cat.id))
+        .map(cat => ({
+          ...cat,
+          id: 'cat_' + Math.random().toString(36).substring(2, 9),
+          items: cat.items.map(item => {
+            const isUnderwearFormula = item.formula === 'days_plus_1' || item.name.toLowerCase().includes('cuecas');
+            return {
+              ...item,
+              id: 'itm_' + Math.random().toString(36).substring(2, 9),
+              qty: isUnderwearFormula ? (days + 1) : (item.qty || 1),
+              name: isUnderwearFormula ? `cuecas (${days}d + 1)` : item.name,
+              formula: isUnderwearFormula ? 'days_plus_1' : item.formula,
+              packed: false
+            };
+          })
+        }));
+
+      const newTrip = {
+        id: 'trip_' + Date.now(),
+        name: tripName,
+        days: days,
+        createdAt: new Date().toISOString(),
+        categories: clonedCategories
+      };
+
+      state.trips.unshift(newTrip);
+      state.currentView = newTrip.id;
+      state.pruneMode = startPrune;
+      state.filter = 'all';
+
+      saveState(true);
+      closeNewTripModal();
+      renderAll();
+      showToast(`Viagem "${tripName}" criada!`);
+    }
+
+    // MALA DE VOLTA: Desmarca tudo com 1 clique mantendo a lista podada
+    function uncheckAllForReturnTrip() {
+      const trip = getActiveTrip();
+      if (!trip) return;
+
+      let uncheckedCount = 0;
+      trip.categories.forEach(cat => {
+        cat.items.forEach(item => {
+          if (item.packed) {
+            item.packed = false;
+            uncheckedCount++;
+          }
+        });
+      });
+
+      state.filter = 'all';
+      saveState(true);
+      renderAll();
+      showToast(`Mala de volta pronta! ${uncheckedCount} itens desmarcados.`, 'fa-rotate-left');
+    }
+
+    function deleteTrip(tripId, event) {
+      if (event) event.stopPropagation();
+      const trip = state.trips.find(t => t.id === tripId);
+      if (!trip) return;
+      if (!confirm(`Apagar a viagem "${trip.name}" do histórico?`)) return;
+
+      state.trips = state.trips.filter(t => t.id !== tripId);
+      if (state.currentView === tripId) {
+        state.currentView = state.trips.length > 0 ? state.trips[0].id : 'TEMPLATE';
+      }
+      saveState(true);
+      renderAll();
+      showToast('Viagem removida do histórico');
+    }
+
+    function renameCurrentTrip() {
+      const trip = getActiveTrip();
+      if (!trip) return;
+      const newName = prompt('Novo nome da viagem:', trip.name);
+      if (newName && newName.trim()) {
+        trip.name = newName.trim();
+        saveState(true);
+        renderAll();
+      }
+    }
+
+    /********************************************************************
+     * 6. OPERAÇÕES NOS ITENS E CATEGORIAS (E REMOÇÃO EM 1 CLIQUE)
+     ********************************************************************/
+    function handleItemClick(catId, itemId) {
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      // Se estiver no Modo Poda, clicar no item remove ele imediatamente da lista atual
+      if (state.pruneMode) {
+        cat.items = cat.items.filter(i => i.id !== itemId);
+        saveState(true);
+        renderAll();
+        return;
+      }
+
+      // Se estiver no Template e não estiver podando, apenas alterna visualmente ou edita
+      const item = cat.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      item.packed = !item.packed;
+      saveState(true);
+      renderAll();
+    }
+
+    function deleteItem(catId, itemId, event) {
+      if (event) event.stopPropagation();
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      cat.items = cat.items.filter(i => i.id !== itemId);
+      saveState(true);
+      renderAll();
+    }
+
+    function changeQty(catId, itemId, delta, event) {
+      if (event) event.stopPropagation();
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+      const item = cat.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      item.qty = Math.max(1, (item.qty || 1) + delta);
+      saveState(true);
+      renderAll();
+    }
+
+    function quickAddItem(catId, event) {
+      event.preventDefault();
+      const input = document.getElementById(`input-add-${catId}`);
+      if (!input || !input.value.trim()) return;
+
+      const rawText = input.value.trim();
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      const newItem = {
+        id: 'itm_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        name: rawText,
+        qty: 1,
+        packed: false
+      };
+
+      cat.items.push(newItem);
+      input.value = '';
+      saveState(true);
+      renderAll();
+
+      // Se adicionou durante uma viagem, oferece atalho mental ou mantém foco
+      const newInput = document.getElementById(`input-add-${catId}`);
+      if (newInput) newInput.focus();
+    }
+
+    function promoteItemToTemplate(catName, itemName, event) {
+      if (event) event.stopPropagation();
+      let targetCat = state.masterTemplate.find(c => c.name.toLowerCase() === catName.toLowerCase());
+      if (!targetCat) {
+        targetCat = {
+          id: 'cat_' + Date.now(),
+          name: catName,
+          icon: 'fa-box',
+          items: []
+        };
+        state.masterTemplate.push(targetCat);
+      }
+
+      const exists = targetCat.items.some(i => i.name.toLowerCase() === itemName.toLowerCase());
+      if (exists) {
+        showToast(`"${itemName}" já existe no seu Template Mestre!`, 'fa-circle-info');
+        return;
+      }
+
+      targetCat.items.push({
+        id: 'tpl_' + Date.now(),
+        name: itemName,
+        qty: 1
+      });
+
+      saveState(true);
+      showToast(`"${itemName}" salvo no Template Mestre!`);
+    }
+
+    function toggleCategoryPackAll(catId) {
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat || cat.items.length === 0) return;
+
+      const allPacked = cat.items.every(i => i.packed);
+      cat.items.forEach(i => i.packed = !allPacked);
+      saveState(true);
+      renderAll();
+    }
+
+    function addNewCategoryPrompt() {
+      const name = prompt('Nome da nova categoria / bolsa:');
+      if (!name || !name.trim()) return;
+
+      const categories = getCurrentCategories();
+      categories.push({
+        id: 'cat_' + Date.now(),
+        name: name.trim(),
+        icon: 'fa-folder',
+        items: []
+      });
+
+      saveState(true);
+      renderAll();
+      showToast(`Categoria "${name.trim()}" adicionada`);
+    }
+
+    // Apaga o grupo/categoria inteira (ex: "Bolsa maior").
+    // Em uma viagem ativa ou no Modo Poda, apaga em 1 clique sem confirmação para ser igual ao Keep.
+    function deleteCategory(catId, event) {
+      if (event) event.stopPropagation();
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      // Só pede confirmação se a pessoa estiver editando o Template Mestre fora do modo poda
+      if (isTemplateView() && !state.pruneMode && cat.items.length > 0) {
+        if (!confirm(`Remover o grupo "${cat.name}" (${cat.items.length} itens) do seu Template Mestre?`)) return;
+      }
+
+      const idx = categories.findIndex(c => c.id === catId);
+      if (idx > -1) {
+        const removedName = categories[idx].name;
+        categories.splice(idx, 1);
+        saveState(true);
+        renderAll();
+        showToast(`Grupo "${removedName}" removido desta lista`, 'fa-trash-can');
+      }
+    }
+
+    function resetMasterTemplateToDefault() {
+      if (!confirm('Restaurar o Template "viagem base" para a versão original? (Suas viagens salvas no histórico NÃO serão apagadas).')) return;
+      state.masterTemplate = JSON.parse(JSON.stringify(DEFAULT_MASTER_TEMPLATE));
+      saveState(true);
+      renderAll();
+      showToast('Template restaurado para o original');
+    }
+
+    function togglePruneMode(forceVal) {
+      state.pruneMode = typeof forceVal === 'boolean' ? forceVal : !state.pruneMode;
+      renderAll();
+    }
+
+    function setFilter(f) {
+      state.filter = f;
+      renderAll();
+    }
+
+    function handleSearch(q) {
+      state.searchQuery = q;
+      const input = document.getElementById('searchInput');
+      if (input.value !== q) input.value = q;
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', !q);
+      renderCategories();
+    }
+
+    /********************************************************************
+     * 7. RENDERIZAÇÃO DA INTERFACE
+     ********************************************************************/
+    function renderAll() {
+      renderSidebar();
+      renderHeaderAndProgress();
+      renderFilterTabs();
+      renderCategories();
+      updateGistStatusBadge();
+    }
+
+    function renderSidebar() {
+      const tplBtn = document.getElementById('navTemplateBtn');
+      const isTpl = isTemplateView();
+
+      tplBtn.className = `w-full text-left p-3 rounded-xl border transition flex items-center justify-between group cursor-pointer ${
+        isTpl 
+          ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' 
+          : 'border-slate-200 dark:border-borderDark hover:bg-slate-100 dark:hover:bg-slate-800/60'
+      }`;
+
+      const tplTotalItems = state.masterTemplate.reduce((acc, c) => acc + c.items.length, 0);
+      document.getElementById('templateCountSub').textContent = `${state.masterTemplate.length} grupos • ${tplTotalItems} itens`;
+
+      // Trips list
+      document.getElementById('tripsTotalBadge').textContent = state.trips.length;
+      const listContainer = document.getElementById('tripsListContainer');
+
+      if (state.trips.length === 0) {
+        listContainer.innerHTML = `
+          <div class="p-4 rounded-xl border border-dashed border-slate-300 dark:border-borderDark text-center space-y-2">
+            <p class="text-xs text-slate-400">Nenhuma viagem criada ainda.</p>
+            <button onclick="openNewTripModal('TEMPLATE')" class="text-xs font-semibold text-blue-400 hover:underline">
+              + Duplicar viagem base
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = state.trips.map(trip => {
+        const active = state.currentView === trip.id;
+        const total = trip.categories.reduce((acc, c) => acc + c.items.length, 0);
+        const packed = trip.categories.reduce((acc, c) => acc + c.items.filter(i => i.packed).length, 0);
+        const pct = total === 0 ? 0 : Math.round((packed / total) * 100);
+        const dateStr = new Date(trip.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+
+        return `
+          <div onclick="selectView('${trip.id}')" class="cursor-pointer p-2.5 rounded-xl border transition group ${
+            active 
+              ? 'bg-blue-600/15 border-blue-500/50 text-blue-400' 
+              : 'border-transparent hover:bg-slate-100 dark:hover:bg-slate-800/60'
+          }">
+            <div class="flex items-center justify-between gap-1">
+              <div class="font-semibold text-xs sm:text-sm truncate">${escapeHtml(trip.name)}</div>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <button onclick="event.stopPropagation(); openNewTripModal('${trip.id}')" class="opacity-60 group-hover:opacity-100 text-slate-400 hover:text-blue-400 p-1 rounded transition" title="Duplicar esta viagem">
+                  <i class="fa-regular fa-copy text-[11px]"></i>
+                </button>
+                <button onclick="deleteTrip('${trip.id}', event)" class="opacity-60 group-hover:opacity-100 text-slate-400 hover:text-rose-400 p-1 rounded transition" title="Excluir viagem">
+                  <i class="fa-solid fa-trash-can text-[11px]"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+              <span>${dateStr} • ${trip.days || '?'}d</span>
+              <span class="${pct === 100 && total > 0 ? 'text-emerald-400 font-semibold' : ''}">${packed}/${total} (${pct}%)</span>
+            </div>
+            <div class="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-1.5">
+              <div class="h-full ${pct === 100 ? 'bg-emerald-500' : 'bg-blue-500'}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHeaderAndProgress() {
+      const isTpl = isTemplateView();
+      const trip = getActiveTrip();
+      const viewBadge = document.getElementById('viewBadge');
+      const titleEl = document.getElementById('currentTitle');
+      const subEl = document.getElementById('currentSubtitle');
+      const daysPill = document.getElementById('tripDaysPill');
+      const toolbar = document.getElementById('tripActionsToolbar');
+      const pruneBanner = document.getElementById('pruneBanner');
+
+      pruneBanner.classList.toggle('hidden', !state.pruneMode);
+
+      if (isTpl) {
+        viewBadge.textContent = 'Template Mestre';
+        viewBadge.className = 'text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30';
+        titleEl.textContent = 'viagem base (Template)';
+        subEl.textContent = 'Sua lista matriz intocável. Quando for viajar, clique em "Nova Viagem" para duplicar e podar sem perder nada daqui.';
+        daysPill.classList.add('hidden');
+
+        toolbar.innerHTML = `
+          <button onclick="openNewTripModal('TEMPLATE')" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-copy"></i> Duplicar p/ Nova Viagem
+          </button>
+          <button onclick="resetMasterTemplateToDefault()" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center gap-1.5" title="Restaurar template original">
+            <i class="fa-solid fa-rotate"></i> Restaurar Padrão
+          </button>
+        `;
+      } else if (trip) {
+        viewBadge.textContent = 'Viagem Ativa';
+        viewBadge.className = 'text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+        titleEl.textContent = trip.name;
+        subEl.textContent = 'Podou o que não vai levar? Vá marcando conforme coloca na mochila. Na hora de voltar pra casa, use o botão "Mala de Volta".';
+        daysPill.textContent = `${trip.days || 4} dias`;
+        daysPill.classList.remove('hidden');
+
+        toolbar.innerHTML = `
+          <button onclick="togglePruneMode()" class="px-3 py-2 rounded-xl text-xs font-semibold border transition flex items-center gap-1.5 ${
+            state.pruneMode 
+              ? 'bg-rose-500 text-white border-rose-500' 
+              : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-borderDark hover:border-rose-500/50 text-slate-700 dark:text-slate-200'
+          }">
+            <i class="fa-solid fa-scissors"></i>
+            <span>${state.pruneMode ? 'Sair da Poda' : 'Modo Poda'}</span>
+          </button>
+
+          <button onclick="uncheckAllForReturnTrip()" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 transition" title="Desmarca todos os itens para você conferir tudo na volta">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Mala de Volta (Uncheck All)</span>
+          </button>
+
+          <button onclick="openNewTripModal('${trip.id}')" class="px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 border border-blue-500/30 flex items-center gap-1.5 transition" title="Criar uma nova viagem usando esta lista já enxuta como base">
+            <i class="fa-regular fa-copy"></i>
+            <span>Duplicar Viagem</span>
+          </button>
+
+          <button onclick="renameCurrentTrip()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 text-xs" title="Renomear Viagem">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+        `;
+      }
+
+      // Progress calculation
+      const cats = getCurrentCategories();
+      const total = cats.reduce((acc, c) => acc + c.items.length, 0);
+      const packed = cats.reduce((acc, c) => acc + c.items.filter(i => i.packed).length, 0);
+      const pct = total === 0 ? 0 : Math.round((packed / total) * 100);
+
+      document.getElementById('progressText').textContent = `${packed} de ${total} itens marcados`;
+      document.getElementById('progressPercentage').textContent = `${pct}%`;
+      document.getElementById('progressBarFill').style.width = `${pct}%`;
+
+      const statusTag = document.getElementById('progressStatusTag');
+      if (pct === 0) statusTag.textContent = '• Tudo aberto';
+      else if (pct < 50) statusTag.textContent = '• Separando itens...';
+      else if (pct < 100) statusTag.textContent = '• Quase tudo na mala!';
+      else statusTag.textContent = '• Tudo pronto! Boa viagem ✈️';
+    }
+
+    function renderFilterTabs() {
+      const filters = ['all', 'unpacked', 'packed'];
+      filters.forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        if (state.filter === f) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white shadow-xs transition';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition';
+        }
+      });
+    }
+
+    function renderCategories() {
+      const grid = document.getElementById('categoriesGrid');
+      const categories = getCurrentCategories();
+      const q = state.searchQuery.trim().toLowerCase();
+      const isTpl = isTemplateView();
+
+      if (categories.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-white dark:bg-cardDark rounded-2xl p-10 text-center border border-slate-200 dark:border-borderDark space-y-3">
+            <p class="text-sm text-slate-400">Nenhuma categoria nesta lista.</p>
+            <button onclick="addNewCategoryPrompt()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold">+ Criar Categoria</button>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = categories.map(cat => {
+        const filteredItems = cat.items.filter(item => {
+          const matchesSearch = !q || item.name.toLowerCase().includes(q) || cat.name.toLowerCase().includes(q);
+          const matchesFilter = 
+            state.filter === 'all' ? true :
+            state.filter === 'packed' ? !!item.packed : !item.packed;
+          return matchesSearch && matchesFilter;
+        });
+
+        // Se estiver buscando algo e a categoria não tiver correspondência, esconde o card
+        if ((q || state.filter !== 'all') && filteredItems.length === 0) {
+          return '';
+        }
+
+        const totalCat = cat.items.length;
+        const packedCat = cat.items.filter(i => i.packed).length;
+        const pctCat = totalCat === 0 ? 0 : Math.round((packedCat / totalCat) * 100);
+
+        return `
+          <div class="bg-white dark:bg-cardDark rounded-2xl border ${state.pruneMode ? 'prune-shake border-rose-500/50' : 'border-slate-200 dark:border-borderDark'} shadow-xs flex flex-col overflow-hidden transition">
+            
+            <!-- Category Header -->
+            <div class="p-4 border-b border-slate-100 dark:border-borderDark flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-900/30">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+                  <i class="fa-solid ${cat.icon || 'fa-suitcase'} text-xs"></i>
+                </div>
+                <div class="truncate">
+                  <h3 class="font-bold text-sm truncate">${escapeHtml(cat.name)}</h3>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                  pctCat === 100 && totalCat > 0 
+                    ? 'bg-emerald-500/15 text-emerald-400' 
+                    : 'bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                }">
+                  ${packedCat}/${totalCat}
+                </span>
+
+                ${state.pruneMode ? `
+                  <button onclick="deleteCategory('${cat.id}', event)" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-rose-500 hover:bg-rose-600 text-white flex items-center gap-1 shadow-xs transition" title="Sumir com todos os itens de ${escapeHtml(cat.name)} em 1 clique">
+                    <i class="fa-solid fa-trash-can text-[10px]"></i> Remover Grupo
+                  </button>
+                ` : `
+                  <button onclick="toggleCategoryPackAll('${cat.id}')" class="text-[11px] font-medium px-2 py-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition" title="Marcar/Desmarcar todos desta caixa">
+                    ${packedCat === totalCat && totalCat > 0 ? 'Desmarcar' : 'Marcar'}
+                  </button>
+                  <button onclick="deleteCategory('${cat.id}', event)" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition" title="Apagar grupo ${escapeHtml(cat.name)} inteiro em 1 clique">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <!-- Category Mini Progress -->
+            <div class="w-full h-1 bg-slate-100 dark:bg-slate-800">
+              <div class="h-full transition-all duration-300 ${pctCat === 100 ? 'bg-emerald-500' : 'bg-blue-500'}" style="width: ${pctCat}%"></div>
+            </div>
+
+            <!-- Items List -->
+            <ul class="divide-y divide-slate-100 dark:divide-borderDark/60 flex-1">
+              ${filteredItems.map(item => `
+                <li 
+                  onclick="handleItemClick('${cat.id}', '${item.id}')"
+                  class="px-4 py-2.5 flex items-center justify-between gap-2 cursor-pointer select-none transition group ${
+                    state.pruneMode 
+                      ? 'hover:bg-rose-500/15' 
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                  }"
+                >
+                  <div class="flex items-center gap-3 min-w-0 flex-1">
+                    ${state.pruneMode ? `
+                      <span class="w-5 h-5 rounded-md bg-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-minus text-[10px]"></i>
+                      </span>
+                    ` : `
+                      <div class="w-5 h-5 rounded-md border flex items-center justify-center transition shrink-0 ${
+                        item.packed 
+                          ? 'bg-emerald-500 border-emerald-500 text-white' 
+                          : 'border-slate-300 dark:border-slate-600 group-hover:border-blue-400'
+                      }">
+                        ${item.packed ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}
+                      </div>
+                    `}
+                    <span class="text-xs sm:text-sm truncate ${
+                      item.packed && !state.pruneMode ? 'line-through text-slate-400 dark:text-slate-500' : ''
+                    }">
+                      ${escapeHtml(item.name)}
+                    </span>
+                  </div>
+
+                  <!-- Right controls: Quantity + Promote to Template + Delete -->
+                  <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+                    ${item.qty > 1 ? `
+                      <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 mr-1">
+                        x${item.qty}
+                      </span>
+                    ` : ''}
+
+                    <div class="hidden group-hover:flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+                      <button onclick="changeQty('${cat.id}', '${item.id}', -1, event)" class="w-5 h-5 text-[10px] text-slate-400 hover:text-white">-</button>
+                      <button onclick="changeQty('${cat.id}', '${item.id}', 1, event)" class="w-5 h-5 text-[10px] text-slate-400 hover:text-white">+</button>
+                    </div>
+
+                    ${!isTpl ? `
+                      <button onclick="promoteItemToTemplate('${escapeQuotes(cat.name)}', '${escapeQuotes(item.name)}', event)" class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-amber-400 transition" title="Salvar este item no Template Mestre">
+                        <i class="fa-solid fa-thumbtack text-[11px]"></i>
+                      </button>
+                    ` : ''}
+
+                    <button onclick="deleteItem('${cat.id}', '${item.id}', event)" class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-400 transition" title="Remover item">
+                      <i class="fa-solid fa-xmark text-xs"></i>
+                    </button>
+                  </div>
+                </li>
+              `).join('')}
+            </ul>
+
+            <!-- Quick Add Footer -->
+            <form onsubmit="quickAddItem('${cat.id}', event)" class="p-2.5 border-t border-slate-100 dark:border-borderDark bg-slate-50/30 dark:bg-slate-900/20 flex items-center gap-1.5">
+              <input 
+                id="input-add-${cat.id}"
+                type="text" 
+                placeholder="+ Adicionar em ${escapeHtml(cat.name)}..." 
+                class="w-full px-2.5 py-1.5 text-xs rounded-lg bg-transparent focus:bg-white dark:focus:bg-slate-900 border border-transparent focus:border-slate-300 dark:focus:border-borderDark focus:outline-none"
+              />
+              <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-blue-500 hover:bg-blue-500/10 shrink-0">
+                Add
+              </button>
+            </form>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    /********************************************************************
+     * 8. INTEGRAÇÃO GITHUB GIST (Banco de Dados JSON na Nuvem)
+     ********************************************************************/
+    function loadGistConfig() {
+      try {
+        const raw = localStorage.getItem(GIST_CONFIG_KEY);
+        if (raw) gistConfig = JSON.parse(raw);
+      } catch (e) {}
+    }
+
+    function openGistModal() {
+      document.getElementById('gistTokenInput').value = gistConfig.token || '';
+      document.getElementById('gistIdInput').value = gistConfig.gistId || '';
+      document.getElementById('gistFeedbackMsg').classList.add('hidden');
+      const modal = document.getElementById('gistModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGistModal() {
+      const modal = document.getElementById('gistModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function showGistFeedback(msg, isError = false) {
+      const el = document.getElementById('gistFeedbackMsg');
+      el.textContent = msg;
+      el.className = `text-xs p-2.5 rounded-lg ${isError ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30' : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'}`;
+      el.classList.remove('hidden');
+    }
+
+    function updateGistStatusBadge(status = 'idle') {
+      const dot = document.getElementById('syncDot');
+      const text = document.getElementById('syncText');
+
+      if (!gistConfig.token) {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+        text.textContent = 'Gist Local';
+        return;
+      }
+
+      if (status === 'syncing') {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+        text.textContent = 'Sincronizando...';
+      } else if (status === 'error') {
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        text.textContent = 'Erro no Gist';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        text.textContent = 'Gist Conectado';
+      }
+    }
+
+    async function autoDiscoverGist() {
+      const token = document.getElementById('gistTokenInput').value.trim();
+      if (!token) {
+        showGistFeedback('Cole seu Personal Access Token primeiro para buscar seus Gists.', true);
+        return;
+      }
+
+      showGistFeedback('Procurando arquivo "packkeep_db.json" nos seus Gists...');
+      try {
+        const res = await fetch('https://api.github.com/gists?per_page=100', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/vnd.github+json'
+          }
+        });
+        if (!res.ok) throw new Error('Token inválido ou sem permissão de Gist.');
+        const gists = await res.json();
+        const found = gists.find(g => g.files && g.files[GIST_FILENAME]);
+
+        if (found) {
+          document.getElementById('gistIdInput').value = found.id;
+          showGistFeedback(`Gist encontrado! ID: ${found.id}. Clique em "Salvar & Conectar".`);
+        } else {
+          showGistFeedback('Nenhum Gist "packkeep_db.json" encontrado ainda. Deixe o ID em branco e clique em "Salvar & Conectar" que eu crio um agora.');
+        }
+      } catch (err) {
+        showGistFeedback(err.message, true);
+      }
+    }
+
+    async function saveGistConfig() {
+      const token = document.getElementById('gistTokenInput').value.trim();
+      let gistId = document.getElementById('gistIdInput').value.trim();
+
+      if (!token) {
+        gistConfig = { token: '', gistId: '' };
+        localStorage.removeItem(GIST_CONFIG_KEY);
+        updateGistStatusBadge();
+        closeGistModal();
+        showToast('Sincronização Gist desconectada');
+        return;
+      }
+
+      gistConfig.token = token;
+      gistConfig.gistId = gistId;
+
+      try {
+        // Se não informou Gist ID, tenta descobrir um existente ou cria um novo
+        if (!gistId) {
+          showGistFeedback('Verificando ou criando Gist secreto...');
+          const resList = await fetch('https://api.github.com/gists?per_page=100', {
+            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github+json' }
+          });
+          if (!resList.ok) throw new Error('Falha ao autenticar no GitHub. Verifique seu token.');
+          const gists = await resList.json();
+          const existing = gists.find(g => g.files && g.files[GIST_FILENAME]);
+
+          if (existing) {
+            gistConfig.gistId = existing.id;
+            localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(gistConfig));
+            await pullFromGist(true);
+          } else {
+            // Cria novo Gist secreto
+            const createRes = await fetch('https://api.github.com/gists', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github+json',
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                description: 'PackKeep - Checklist & Histórico de Viagens (Sync Database)',
+                public: false,
+                files: {
+                  [GIST_FILENAME]: {
+                    content: JSON.stringify({
+                      updatedAt: state.updatedAt,
+                      masterTemplate: state.masterTemplate,
+                      trips: state.trips
+                    }, null, 2)
+                  }
+                }
+              })
+            });
+            if (!createRes.ok) throw new Error('Não foi possível criar o Gist. Seu token tem o escopo "gist"?');
+            const created = await createRes.json();
+            gistConfig.gistId = created.id;
+            localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(gistConfig));
+            showToast('Novo Gist secreto criado e sincronizado!');
+          }
+        } else {
+          localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(gistConfig));
+          await pullFromGist(true);
+        }
+
+        updateGistStatusBadge();
+        closeGistModal();
+      } catch (err) {
+        showGistFeedback(err.message, true);
+        updateGistStatusBadge('error');
+      }
+    }
+
+    function scheduleGistPush() {
+      if (!gistConfig.token || !gistConfig.gistId) return;
+      updateGistStatusBadge('syncing');
+      if (syncTimeout) clearTimeout(syncTimeout);
+      syncTimeout = setTimeout(() => {
+        pushToGist(false);
+      }, 1200);
+    }
+
+    async function pushToGist(manual = false) {
+      if (!gistConfig.token || !gistConfig.gistId) {
+        if (manual) showGistFeedback('Configure o Token e o Gist ID primeiro.', true);
+        return;
+      }
+
+      updateGistStatusBadge('syncing');
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistConfig.gistId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${gistConfig.token}`,
+            'Accept': 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            files: {
+              [GIST_FILENAME]: {
+                content: JSON.stringify({
+                  updatedAt: state.updatedAt,
+                  masterTemplate: state.masterTemplate,
+                  trips: state.trips
+                }, null, 2)
+              }
+            }
+          })
+        });
+
+        if (!res.ok) throw new Error('Erro ao salvar no Gist');
+        updateGistStatusBadge('idle');
+        if (manual) {
+          showGistFeedback('Dados enviados para o Gist com sucesso!');
+          showToast('Enviado para o GitHub Gist');
+        }
+      } catch (err) {
+        updateGistStatusBadge('error');
+        if (manual) showGistFeedback(err.message, true);
+      }
+    }
+
+    async function pullFromGist(manual = false) {
+      if (!gistConfig.token || !gistConfig.gistId) {
+        if (manual) showGistFeedback('Configure o Token e o Gist ID primeiro.', true);
+        return;
+      }
+
+      updateGistStatusBadge('syncing');
+      try {
+        const res = await fetch(`https://api.github.com/gists/${gistConfig.gistId}`, {
+          headers: {
+            'Authorization': `Bearer ${gistConfig.token}`,
+            'Accept': 'application/vnd.github+json'
+          }
+        });
+
+        if (!res.ok) throw new Error('Não foi possível ler o Gist informado.');
+        const data = await res.json();
+        const file = data.files && data.files[GIST_FILENAME];
+
+        if (file && file.content) {
+          const remote = JSON.parse(file.content);
+          if (remote.masterTemplate) state.masterTemplate = remote.masterTemplate;
+          if (Array.isArray(remote.trips)) state.trips = remote.trips;
+          state.updatedAt = remote.updatedAt || new Date().toISOString();
+
+          // Se a viagem selecionada não existir mais, volta para a mais recente ou Template
+          if (state.currentView !== 'TEMPLATE' && !state.trips.some(t => t.id === state.currentView)) {
+            state.currentView = state.trips.length > 0 ? state.trips[0].id : 'TEMPLATE';
+          }
+
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          renderAll();
+          updateGistStatusBadge('idle');
+          if (manual) {
+            showGistFeedback('Dados puxados da nuvem e atualizados!');
+            showToast('Sincronizado com o GitHub Gist');
+          }
+        }
+      } catch (err) {
+        updateGistStatusBadge('error');
+        if (manual) showGistFeedback(err.message, true);
+      }
+    }
+
+    /********************************************************************
+     * 9. UTILITÁRIOS (Export/Import JSON, Tema, Sidebar, Toast)
+     ********************************************************************/
+    function exportDataJson() {
+      const dataStr = JSON.stringify({
+        updatedAt: state.updatedAt,
+        masterTemplate: state.masterTemplate,
+        trips: state.trips
+      }, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `packkeep_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup JSON baixado');
+    }
+
+    function importDataJson(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (imported.masterTemplate) state.masterTemplate = imported.masterTemplate;
+          if (Array.isArray(imported.trips)) state.trips = imported.trips;
+          saveState(true);
+          renderAll();
+          showToast('Histórico e Template importados com sucesso!');
+        } catch (err) {
+          alert('Arquivo JSON inválido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.toggle('dark');
+      document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const bd = document.getElementById('sidebarBackdrop');
+      const isHidden = sb.classList.contains('-translate-x-full');
+      if (isHidden) {
+        sb.classList.remove('-translate-x-full');
+        bd.classList.remove('hidden');
+      } else {
+        sb.classList.add('-translate-x-full');
+        bd.classList.add('hidden');
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(msg, icon = 'fa-circle-check') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').className = `fa-solid ${icon} text-emerald-400`;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeQuotes(str) {
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
