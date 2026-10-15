@@ -35,3 +35,28 @@ Como a aplicação é contida em um único arquivo `index.html`, você pode exec
 2. **Via Servidor Local (se preferir):**
    ```bash
    npx serve .
+
+---
+
+## ☁️ Configurando a Sincronização (GitHub Gist)
+
+Para manter seus dados sincronizados entre múltiplos dispositivos:
+1. Vá nas configurações do seu GitHub e gere um **Personal Access Token (Classic)** com permissão exclusiva no escopo **`gist`**.
+2. No aplicativo PackKeep, clique no botão de status **Gist Local** no topo da tela.
+3. Cole o seu token e clique em **Salvar & Conectar** (o app criará e gerenciará um Gist privado chamado `packkeep_db.json` automaticamente).
+4. No seu outro dispositivo (ex: iPhone), cole o mesmo token e clique em **Buscar meu Gist existente**.
+
+---
+
+## 📱 Instalação como App no iOS
+
+1. Acesse a URL do projeto hospedada no seu **GitHub Pages** através do navegador **Safari** no iPhone.
+2. Toque no botão **Compartilhar** ($\uparrow$) na barra inferior.
+3. Selecione **"Adicionar à Tela de Início"**.
+4. Abra o aplicativo diretamente pelo novo ícone na sua home screen para usá-lo em tela cheia.
+
+---
+
+## 📄 Licença
+
+Este projeto é de uso pessoal e aberto sob a licença **MIT**.
