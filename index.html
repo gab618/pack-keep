@@ -1112,6 +1112,28 @@
       renderAll();
     }
 
+    function editItemText(catId, itemId, event) {
+      if (event) event.stopPropagation();
+      const categories = getCurrentCategories();
+      const cat = categories.find(c => c.id === catId);
+      const item = cat && cat.items.find(i => i.id === itemId);
+      if (!item) return;
+
+      const newName = prompt('Editar texto do item:', item.name);
+      if (newName === null) return;
+
+      const trimmedName = newName.trim();
+      if (!trimmedName) {
+        showToast('O texto do item não pode ficar vazio', 'fa-circle-exclamation');
+        return;
+      }
+      if (trimmedName === item.name) return;
+
+      item.name = trimmedName;
+      saveState(true);
+      renderAll();
+    }
+
     function changeQty(catId, itemId, delta, event) {
       if (event) event.stopPropagation();
       const categories = getCurrentCategories();
@@ -1534,7 +1556,7 @@
                     </span>
                   </div>
 
-                  <!-- Right controls: Quantity + Promote to Template + Delete -->
+                  <!-- Right controls: Quantity + Promote to Template + Edit + Delete -->
                   <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
                     ${item.qty > 1 ? `
                       <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 mr-1">
@@ -1552,6 +1574,10 @@
                         <i class="fa-solid fa-thumbtack text-[11px]"></i>
                       </button>
                     ` : ''}
+
+                    <button type="button" onclick="editItemText('${cat.id}', '${item.id}', event)" class="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 p-1 text-slate-400 hover:text-blue-400 transition" title="Editar texto do item" aria-label="Editar ${escapeHtml(item.name)}">
+                      <i class="fa-solid fa-pen text-[11px]"></i>
+                    </button>
 
                     <button onclick="deleteItem('${cat.id}', '${item.id}', event)" class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-400 transition" title="Remover item">
                       <i class="fa-solid fa-xmark text-xs"></i>
